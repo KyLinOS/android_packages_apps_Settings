@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The MoKee OpenSource Project
+ * Copyright (C) 2013 The MoKee OpenSource Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.android.settings.cyanogenmod;
 
 import android.app.ActivityManager;
 import android.app.INotificationManager;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.ServiceManager;
@@ -39,21 +40,24 @@ public class Halo extends SettingsPreferenceFragment implements OnPreferenceChan
     private static final String KEY_HALO_STATE = "halo_state";
     private static final String KEY_HALO_HIDE = "halo_hide";
     private static final String KEY_HALO_REVERSED = "halo_reversed";
+    private static final String KEY_HALO_SIZE = "halo_size";
     private static final String KEY_HALO_PAUSE = "halo_pause";
 
     private ListPreference mHaloState;
+    private ListPreference mHaloSize;
     private CheckBoxPreference mHaloEnabled;
     private CheckBoxPreference mHaloHide;
     private CheckBoxPreference mHaloReversed;
     private CheckBoxPreference mHaloPause;
 
-    private Context mContext;
+    private ContentResolver resolver;
     private INotificationManager mNotificationManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mContext = getActivity();
+
+        resolver = getContentResolver();
 
         addPreferencesFromResource(R.xml.halo_settings);
         PreferenceScreen prefSet = getPreferenceScreen();
@@ -62,7 +66,7 @@ public class Halo extends SettingsPreferenceFragment implements OnPreferenceChan
                 ServiceManager.getService(Context.NOTIFICATION_SERVICE));
 
         mHaloEnabled = (CheckBoxPreference) prefSet.findPreference(KEY_HALO_ENABLED);
-        mHaloEnabled.setChecked(Settings.System.getInt(mContext.getContentResolver(),
+        mHaloEnabled.setChecked(Settings.System.getInt(resolver,
                 Settings.System.HALO_ENABLED, 0) == 1);
 
         mHaloState = (ListPreference) prefSet.findPreference(KEY_HALO_STATE);
@@ -70,17 +74,27 @@ public class Halo extends SettingsPreferenceFragment implements OnPreferenceChan
         mHaloState.setOnPreferenceChangeListener(this);
 
         mHaloHide = (CheckBoxPreference) prefSet.findPreference(KEY_HALO_HIDE);
-        mHaloHide.setChecked(Settings.System.getInt(mContext.getContentResolver(),
+        mHaloHide.setChecked(Settings.System.getInt(resolver,
                 Settings.System.HALO_HIDE, 0) == 1);
 
         mHaloReversed = (CheckBoxPreference) prefSet.findPreference(KEY_HALO_REVERSED);
-        mHaloReversed.setChecked(Settings.System.getInt(mContext.getContentResolver(),
+        mHaloReversed.setChecked(Settings.System.getInt(resolver,
                 Settings.System.HALO_REVERSED, 1) == 1);
 
         int isLowRAM = (ActivityManager.isLargeRAM()) ? 0 : 1;
         mHaloPause = (CheckBoxPreference) prefSet.findPreference(KEY_HALO_PAUSE);
-        mHaloPause.setChecked(Settings.System.getInt(mContext.getContentResolver(),
+        mHaloPause.setChecked(Settings.System.getInt(resolver,
                 Settings.System.HALO_PAUSE, isLowRAM) == 1);
+
+        mHaloSize = (ListPreference) prefSet.findPreference(KEY_HALO_SIZE);
+        try {
+            float haloSize = Settings.System.getFloat(resolver,
+                    Settings.System.HALO_SIZE, 1.0f);
+            mHaloSize.setValue(String.valueOf(haloSize));  
+        } catch(Exception ex) {
+            // So what
+        }
+        mHaloSize.setOnPreferenceChangeListener(this);
 
     }
 
@@ -96,19 +110,19 @@ public class Halo extends SettingsPreferenceFragment implements OnPreferenceChan
     @Override
     public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
         if (preference == mHaloEnabled) {
-             Settings.System.putInt(mContext.getContentResolver(),
+             Settings.System.putInt(resolver,
                     Settings.System.HALO_ENABLED, mHaloEnabled.isChecked()
                     ? 1 : 0);
         } else if (preference == mHaloHide) {
-            Settings.System.putInt(mContext.getContentResolver(),
+            Settings.System.putInt(resolver,
                     Settings.System.HALO_HIDE, mHaloHide.isChecked()
                     ? 1 : 0);
         } else if (preference == mHaloReversed) {
-            Settings.System.putInt(mContext.getContentResolver(),
+            Settings.System.putInt(resolver,
                     Settings.System.HALO_REVERSED, mHaloReversed.isChecked()
                     ? 1 : 0);
         } else if (preference == mHaloPause) {
-            Settings.System.putInt(mContext.getContentResolver(),
+            Settings.System.putInt(resolver,
                     Settings.System.HALO_PAUSE, mHaloPause.isChecked()
                     ? 1 : 0);
         }
@@ -124,6 +138,11 @@ public class Halo extends SettingsPreferenceFragment implements OnPreferenceChan
             } catch (android.os.RemoteException ex) {
                 // System dead
             }
+            return true;
+        } else if (preference == mHaloSize) {
+            float haloSize = Float.valueOf((String) newValue);
+            Settings.System.putFloat(getActivity().getContentResolver(),
+                    Settings.System.HALO_SIZE, haloSize);
             return true;
         }
         return false;

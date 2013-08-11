@@ -21,6 +21,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
+import android.app.FragmentManager;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -93,6 +94,7 @@ public class PrivacyGuardManager extends Fragment
     public static final class AppInfo {
         String title;
         String packageName;
+        boolean enabled;
         boolean privacyGuardEnabled;
     }
 
@@ -104,6 +106,16 @@ public class PrivacyGuardManager extends Fragment
         mPm = mActivity.getPackageManager();
 
         return inflater.inflate(R.layout.privacy_guard_manager, container, false);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        FragmentManager fm = getFragmentManager();
+        Fragment f = fm.findFragmentById(R.id.privacy_guard_prefs);
+        if (f != null && !fm.isDestroyed()) {
+            fm.beginTransaction().remove(f).commit();
+        }
     }
 
     @Override
@@ -234,14 +246,18 @@ public class PrivacyGuardManager extends Fragment
             AppInfo app = new AppInfo();
             app.title = appInfo.loadLabel(mPm).toString();
             app.packageName = info.packageName;
+            app.enabled = appInfo.enabled;
             app.privacyGuardEnabled = mPm.getPrivacyGuardSetting(app.packageName);
             apps.add(app);
         }
 
-        // sort the apps by title
+        // sort the apps by their enabled state, then by title
         Collections.sort(apps, new Comparator<AppInfo>() {
             @Override
             public int compare(AppInfo lhs, AppInfo rhs) {
+                if (lhs.enabled != rhs.enabled) {
+                    return lhs.enabled ? -1 : 1;
+                }
                 return lhs.title.compareToIgnoreCase(rhs.title);
             }
         });
