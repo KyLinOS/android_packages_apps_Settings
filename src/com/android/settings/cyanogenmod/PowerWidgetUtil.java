@@ -156,7 +156,13 @@ public class PowerWidgetUtil {
             if (WimaxHelper.isWimaxSupported(context)) {
                 buttons += BUTTON_DELIMITER + BUTTON_WIMAX;
             }
+            if(PhoneConstants.LTE_ON_CDMA_TRUE == TelephonyManager.getDefault().getLteOnCdmaMode() ||
+                    TelephonyManager.getDefault().getLteOnGsmMode() != 0) {
+                buttons += BUTTON_DELIMITER + BUTTON_LTE;
+            }
         }
+        // make sure any buttons we added are included
+        buttons = mergeInNewButtonString(buttons, BUTTONS_DEFAULT);
         return buttons;
     }
 
