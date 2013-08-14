@@ -111,7 +111,7 @@ public class NotificationDrawer extends SettingsPreferenceFragment implements
 
             mPowerWidget.setChecked(Settings.System.getInt(resolver,
                     Settings.System.EXPANDED_VIEW_WIDGET, 1) == 1);
-            mPowerWidgetHideOnCollapse.setChecked((Settings.System.getInt(getActivity()
+            mPowerWidgetHideOnCollapse.setChecked((Settings.System.getInt(resolver,
                     Settings.System.COLLAPSE_VOLUME_PANEL, 0) == 1));
             mPowerWidgetHideOnChange.setChecked(Settings.System.getInt(resolver,
                     Settings.System.EXPANDED_HIDE_ONCHANGE, 0) == 1);
